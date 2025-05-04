@@ -4,11 +4,23 @@ import io
 from PIL import Image
 import numpy as np
 import cv2
+from fastapi.responses import HTMLResponse
+from fastapi.middleware.cors import CORSMiddleware
 
+# Initialize FastAPI app
 app = FastAPI()
 
+# Add CORS middleware to allow frontend requests from any origin
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins (you can restrict this to specific origins)
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all methods (GET, POST, etc.)
+    allow_headers=["*"],  # Allow all headers
+)
 
-from fastapi.responses import HTMLResponse
+# Load YOLO model
+model = YOLO("yolov8n.pt")
 
 @app.get("/", response_class=HTMLResponse)
 def home():
@@ -26,9 +38,14 @@ def home():
             const canvas = document.getElementById('canvas');
             const ctx = canvas.getContext('2d');
 
-            navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
-                video.srcObject = stream;
-            });
+            // Request access to the rear camera (for mobile devices)
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+                .then(stream => {
+                    video.srcObject = stream;
+                })
+                .catch(err => {
+                    alert('Error accessing camera: ' + err.message);  // Show error message if camera access fails
+                });
 
             function sendFrame() {
                 const tempCanvas = document.createElement('canvas');
@@ -56,23 +73,22 @@ def home():
                             ctx.fillStyle = "red";
                             ctx.fillText(det.tag + " " + (det.confidence*100).toFixed(1) + "%", x1, y1 - 5);
                         }
-                    });
+                    })
+                    .catch(error => console.error("Error in detection:", error));  // Log any errors from the fetch request
                 }, 'image/jpeg');
             }
 
-            setInterval(sendFrame, 1000); // send 1 frame per second
+            setInterval(sendFrame, 1000); // Send 1 frame per second
         </script>
     </body>
     </html>
     """
 
-# Load YOLO model
-model = YOLO("yolov8n.pt")
-
 @app.post("/detect/")
 async def detect(file: UploadFile = File(...)):
     # Read the incoming frame as bytes
     image_bytes = await file.read()
+
     # Convert bytes to an image using PIL
     image = Image.open(io.BytesIO(image_bytes))
 
