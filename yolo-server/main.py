@@ -7,6 +7,10 @@ import cv2
 
 app = FastAPI()
 
+
+@app.get("/")
+def root():
+    return {"message": "YOLO detection API is running. Use POST /detect/ with an image file."}
 # Load YOLO model
 model = YOLO("yolov8n.pt")
 
