@@ -85,7 +85,7 @@ def home():
 async def detect(file: UploadFile = File(...)):
     image_bytes = await file.read()
     image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-    image = image.resize((640, 480))  # Resize to 320x320
+    image = image.resize((640, 448))  # Resize to 320x320
 
 
     loop = asyncio.get_event_loop()
