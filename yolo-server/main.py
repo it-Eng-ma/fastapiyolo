@@ -89,7 +89,7 @@ def home():
 async def detect(file: UploadFile = File(...)):
     image_bytes = await file.read()
     image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-    image = image.resize((448, 448))  # Resize to 320x320
+    image = image.resize((320, 320))  # Resize to 320x320
 
     def run_inference():
         return model(image, conf=confThreshold, iou=iouThreshold)
