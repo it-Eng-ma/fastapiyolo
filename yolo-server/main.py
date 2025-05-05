@@ -24,6 +24,11 @@ app.add_middleware(
 model = YOLO("yolo-server/cardmg.pt")
 executor = concurrent.futures.ThreadPoolExecutor()
 
+# Set the thresholds as requested
+iouThreshold = 0.3
+confThreshold = 0.9
+classThreshold = 0.1
+
 @app.get("/", response_class=HTMLResponse)
 def home():
     return """
@@ -89,7 +94,9 @@ async def detect(file: UploadFile = File(...)):
         image = image.resize((320, 240))
 
         loop = asyncio.get_event_loop()
-        results = await loop.run_in_executor(executor, model, image)
+        
+        # Apply the thresholds for detection
+        results = await loop.run_in_executor(executor, model, image, {"iou": iouThreshold, "conf": confThreshold, "class": classThreshold})
 
         detections = []
         boxes = results[0].boxes
