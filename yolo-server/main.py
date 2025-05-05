@@ -91,18 +91,17 @@ async def detect(file: UploadFile = File(...)):
     image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
     image = image.resize((320, 320))  # Resize to 320x320
 
+    def run_inference():
+        return model(image, conf=confThreshold, iou=iouThreshold)
+
     loop = asyncio.get_event_loop()
+    results = await loop.run_in_executor(executor, run_inference)
 
-    # Apply the thresholds for detection
-    results = await loop.run_in_executor(
-        executor, model, image, {"iou": iouThreshold, "conf": confThreshold, "class": classThreshold}
-    )
-
+    result = results[0]
     detections = []
-    boxes = results[0].boxes
 
-    if boxes is not None:
-        for box in boxes.data.tolist():
+    if result.boxes is not None:
+        for box in result.boxes.data.tolist():
             x1, y1, x2, y2, score, class_id = box
             detections.append({
                 "box": [x1, y1, x2, y2],
