@@ -6,7 +6,8 @@ import numpy as np
 import cv2
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
-
+import asyncio
+import concurrent.futures
 # Initialize FastAPI app
 app = FastAPI()
 
@@ -83,18 +84,23 @@ def home():
     </body>
     </html>
     """
+import asyncio
+import concurrent.futures
 
+executor = concurrent.futures.ThreadPoolExecutor()
 @app.post("/detect/")
 async def detect(file: UploadFile = File(...)):
-    # Read the incoming frame as bytes
     image_bytes = await file.read()
 
-    # Convert bytes to an image using PIL
-    image = Image.open(io.BytesIO(image_bytes))
+    try:
+        image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+        image = image.resize((320, 240))
+    except Exception as e:
+        print("Error loading image:", e)
+        return {"results": []}
 
-    # Perform inference with YOLO
-    results = model(image)  # Inference on the frame
-
+    loop = asyncio.get_event_loop()
+    results = await loop.run_in_executor(executor, model, image)
     # Extract detections
 detections = []
 boxes = results[0].boxes
