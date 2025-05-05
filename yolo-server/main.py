@@ -75,7 +75,7 @@ def home():
                 }, 'image/jpeg');
             }
 
-            setInterval(sendFrame, 3000); // every 3s to reduce CPU
+            setInterval(sendFrame, 5000); // every 3s to reduce CPU
         </script>
     </body>
     </html>
