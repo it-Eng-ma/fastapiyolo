@@ -36,8 +36,8 @@ def home():
     <head><title>Live YOLO Detection</title></head>
     <body>
         <h2>Live YOLOv8 Detection</h2>
-        <video id="video" width="320" height="320" autoplay></video>
-        <canvas id="canvas" width="320" height="320" style="position:absolute; top:0; left:0;"></canvas>
+        <video id="video" width="448" height="448" autoplay></video>
+        <canvas id="canvas" width="448" height="448" style="position:absolute; top:0; left:0;"></canvas>
         <script>
             const video = document.getElementById('video');
             const canvas = document.getElementById('canvas');
@@ -49,10 +49,10 @@ def home():
 
             function sendFrame() {
                 const tempCanvas = document.createElement('canvas');
-                tempCanvas.width = 320;
-                tempCanvas.height = 320;
+                tempCanvas.width = 448;
+                tempCanvas.height = 448;
                 const tempCtx = tempCanvas.getContext('2d');
-                tempCtx.drawImage(video, 0, 0, 320, 320);
+                tempCtx.drawImage(video, 0, 0, 448, 448);
                 tempCanvas.toBlob(blob => {
                     const formData = new FormData();
                     formData.append('file', blob, 'frame.jpg');
@@ -89,7 +89,7 @@ def home():
 async def detect(file: UploadFile = File(...)):
     image_bytes = await file.read()
     image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-    image = image.resize((320, 320))  # Resize to 320x320
+    image = image.resize((448, 448))  # Resize to 320x320
 
     def run_inference():
         return model(image, conf=confThreshold, iou=iouThreshold)
