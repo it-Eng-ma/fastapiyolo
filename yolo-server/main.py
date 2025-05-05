@@ -91,7 +91,8 @@ async def detect(file: UploadFile = File(...)):
     try:
         image_bytes = await file.read()
         image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-        image = image.resize((320, 240))
+        image = image.resize((640, 640))  # Resize to 640x640
+#320/240
 
         loop = asyncio.get_event_loop()
         
