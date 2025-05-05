@@ -36,8 +36,8 @@ def home():
     <head><title>Live YOLO Detection</title></head>
     <body>
         <h2>Live YOLOv8 Detection</h2>
-        <video id="video" width="640" height="480" autoplay></video>
-        <canvas id="canvas" width="640" height="480" style="position:absolute; top:0; left:0;"></canvas>
+        <video id="video" width="320" height="320" autoplay></video>
+        <canvas id="canvas" width="320" height="320" style="position:absolute; top:0; left:0;"></canvas>
         <script>
             const video = document.getElementById('video');
             const canvas = document.getElementById('canvas');
@@ -49,10 +49,10 @@ def home():
 
             function sendFrame() {
                 const tempCanvas = document.createElement('canvas');
-                tempCanvas.width = 640;
-                tempCanvas.height = 480;
+                tempCanvas.width = 320;
+                tempCanvas.height = 320;
                 const tempCtx = tempCanvas.getContext('2d');
-                tempCtx.drawImage(video, 0, 0, 640, 480);
+                tempCtx.drawImage(video, 0, 0, 320, 320);
                 tempCanvas.toBlob(blob => {
                     const formData = new FormData();
                     formData.append('file', blob, 'frame.jpg');
@@ -80,7 +80,7 @@ def home():
                 }, 'image/jpeg');
             }
 
-            setInterval(sendFrame, 5000); // every 3s to reduce CPU
+            setInterval(sendFrame, 3000); // every 3s to reduce CPU
         </script>
     </body>
     </html>
@@ -91,7 +91,7 @@ async def detect(file: UploadFile = File(...)):
     try:
         image_bytes = await file.read()
         image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-        image = image.resize((640, 640))  # Resize to 640x640
+        image = image.resize((320, 320))  # Resize to 640x640
 #320/240
 
         loop = asyncio.get_event_loop()
