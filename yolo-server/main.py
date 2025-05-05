@@ -24,10 +24,6 @@ app.add_middleware(
 model = YOLO("yolo-server/cardmg.pt")
 executor = concurrent.futures.ThreadPoolExecutor()
 
-# Set the thresholds as requested
-iouThreshold = 0.3
-confThreshold = 0.9
-classThreshold = 0.2
 
 @app.get("/", response_class=HTMLResponse)
 def home():
@@ -36,8 +32,8 @@ def home():
     <head><title>Live YOLO Detection</title></head>
     <body>
         <h2>Live YOLOv8 Detection</h2>
-        <video id="video" width="448" height="640" autoplay></video>
-        <canvas id="canvas" width="448" height="640" style="position:absolute; top:0; left:0;"></canvas>
+        <video id="video" width="640" height="448" autoplay></video>
+        <canvas id="canvas" width="640" height="448" style="position:absolute; top:0; left:0;"></canvas>
         <script>
             const video = document.getElementById('video');
             const canvas = document.getElementById('canvas');
@@ -49,10 +45,10 @@ def home():
 
             function sendFrame() {
                 const tempCanvas = document.createElement('canvas');
-                tempCanvas.width = 448;
-                tempCanvas.height = 640;
+                tempCanvas.width = 640;
+                tempCanvas.height = 448;
                 const tempCtx = tempCanvas.getContext('2d');
-                tempCtx.drawImage(video, 0, 0, 448, 640);
+                tempCtx.drawImage(video, 0, 0,640 , 448);
                 tempCanvas.toBlob(blob => {
                     const formData = new FormData();
                     formData.append('file', blob, 'frame.jpg');
@@ -89,16 +85,15 @@ def home():
 async def detect(file: UploadFile = File(...)):
     image_bytes = await file.read()
     image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-    image = image.resize((448, 640))  # Resize to 320x320
+    image = image.resize((640, 480))  # Resize to 320x320
 
-    def run_inference():
-        return model(image, conf=confThreshold, iou=iouThreshold)
 
     loop = asyncio.get_event_loop()
-    results = await loop.run_in_executor(executor, run_inference)
+    results = await loop.run_in_executor(executor, model, image)
 
-    result = results[0]
     detections = []
+    boxes = results[0].boxes
+
 
     if result.boxes is not None:
         for box in result.boxes.data.tolist():
