@@ -85,34 +85,30 @@ def home():
     </body>
     </html>
     """
-
 @app.post("/detect/")
 async def detect(file: UploadFile = File(...)):
-    try:
-        image_bytes = await file.read()
-        image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-        image = image.resize((320, 320))  # Resize to 640x640
-#320/240
+    image_bytes = await file.read()
+    image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+    image = image.resize((320, 320))  # Resize to 320x320
 
-        loop = asyncio.get_event_loop()
-        
-        # Apply the thresholds for detection
-        results = await loop.run_in_executor(executor, model, image, {"iou": iouThreshold, "conf": confThreshold, "class": classThreshold})
+    loop = asyncio.get_event_loop()
 
-        detections = []
-        boxes = results[0].boxes
+    # Apply the thresholds for detection
+    results = await loop.run_in_executor(
+        executor, model, image, {"iou": iouThreshold, "conf": confThreshold, "class": classThreshold}
+    )
 
-        if boxes is not None:
-            for box in boxes.data.tolist():
-                x1, y1, x2, y2, score, class_id = box
-                detections.append({
-                    "box": [x1, y1, x2, y2],
-                    "confidence": score,
-                    "class_id": int(class_id),
-                    "tag": model.names[int(class_id)]
-                })
+    detections = []
+    boxes = results[0].boxes
 
-        return {"results": detections}
-    except Exception as e:
-        print("🔥 Error in /detect/:", e)
-        return {"results": []}
+    if boxes is not None:
+        for box in boxes.data.tolist():
+            x1, y1, x2, y2, score, class_id = box
+            detections.append({
+                "box": [x1, y1, x2, y2],
+                "confidence": score,
+                "class_id": int(class_id),
+                "tag": model.names[int(class_id)]
+            })
+
+    return {"results": detections}
