@@ -87,7 +87,6 @@ def home():
     """
 
 
-executor = concurrent.futures.ThreadPoolExecutor()
 @app.post("/detect/")
 async def detect(file: UploadFile = File(...)):
     image_bytes = await file.read()
@@ -101,20 +100,19 @@ async def detect(file: UploadFile = File(...)):
 
     loop = asyncio.get_event_loop()
     results = await loop.run_in_executor(executor, model, image)
-    # Extract detections
-detections = []
-boxes = results[0].boxes
 
-if boxes is not None:
-    for box in boxes.data.tolist():  # Loop through the boxes
-        x1, y1, x2, y2, score, class_id = box
-        detections.append({
-            "box": [x1, y1, x2, y2],       # Bounding box coordinates
-            "confidence": score,          # Confidence score
-            "class_id": int(class_id),    # Class ID
-            "tag": model.names[int(class_id)]  # Class name
-        })
+    detections = []
+    boxes = results[0].boxes
 
+    if boxes is not None:
+        for box in boxes.data.tolist():
+            x1, y1, x2, y2, score, class_id = box
+            detections.append({
+                "box": [x1, y1, x2, y2],
+                "confidence": score,
+                "class_id": int(class_id),
+                "tag": model.names[int(class_id)]
+            })
 
- # Return detections as JSON
-return {"results": detections}
+    return {"results": detections}
+
