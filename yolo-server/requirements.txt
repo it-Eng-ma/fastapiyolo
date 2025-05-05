@@ -1,7 +1,8 @@
 fastapi
 uvicorn
-ultralytics
 pillow
 numpy
 python-multipart
 opencv-python-headless
+ultralytics==8.0.20
+
