@@ -96,15 +96,19 @@ async def detect(file: UploadFile = File(...)):
     results = model(image)  # Inference on the frame
 
     # Extract detections
-    detections = []
-    for box in results[0].boxes.data.tolist():  # Loop through the boxes
+detections = []
+boxes = results[0].boxes
+
+if boxes is not None:
+    for box in boxes.data.tolist():  # Loop through the boxes
         x1, y1, x2, y2, score, class_id = box
         detections.append({
-            "box": [x1, y1, x2, y2],    # Bounding box coordinates
-            "confidence": score,         # Confidence score
-            "class_id": int(class_id),   # Class ID
+            "box": [x1, y1, x2, y2],       # Bounding box coordinates
+            "confidence": score,          # Confidence score
+            "class_id": int(class_id),    # Class ID
             "tag": model.names[int(class_id)]  # Class name
         })
+
 
     # Return detections as JSON
     return {"results": detections}
