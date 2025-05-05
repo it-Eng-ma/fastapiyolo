@@ -9,28 +9,26 @@ from fastapi.middleware.cors import CORSMiddleware
 import asyncio
 import concurrent.futures
 
-# Initialize FastAPI app
 app = FastAPI()
 
-# Add CORS middleware to allow frontend requests from any origin
+# CORS for frontend access
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins (you can restrict this to specific origins)
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],  # Allow all methods (GET, POST, etc.)
-    allow_headers=["*"],  # Allow all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Load YOLO model
 model = YOLO("yolov8n.pt")
+executor = concurrent.futures.ThreadPoolExecutor()
 
 @app.get("/", response_class=HTMLResponse)
 def home():
     return """
     <html>
-    <head>
-        <title>Live YOLO Detection</title>
-    </head>
+    <head><title>Live YOLO Detection</title></head>
     <body>
         <h2>Live YOLOv8 Detection</h2>
         <video id="video" width="640" height="480" autoplay></video>
@@ -40,14 +38,9 @@ def home():
             const canvas = document.getElementById('canvas');
             const ctx = canvas.getContext('2d');
 
-            // Request access to the rear camera (for mobile devices)
             navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-                .then(stream => {
-                    video.srcObject = stream;
-                })
-                .catch(err => {
-                    alert('Error accessing camera: ' + err.message);  // Show error message if camera access fails
-                });
+                .then(stream => { video.srcObject = stream; })
+                .catch(err => { alert('Error accessing camera: ' + err.message); });
 
             function sendFrame() {
                 const tempCanvas = document.createElement('canvas');
@@ -58,12 +51,14 @@ def home():
                 tempCanvas.toBlob(blob => {
                     const formData = new FormData();
                     formData.append('file', blob, 'frame.jpg');
-
                     fetch('/detect/', {
                         method: 'POST',
                         body: formData
                     })
-                    .then(res => res.json())
+                    .then(res => {
+                        if (!res.ok) throw new Error("Server error: " + res.status);
+                        return res.json();
+                    })
                     .then(data => {
                         ctx.clearRect(0, 0, canvas.width, canvas.height);
                         for (const det of data.results) {
@@ -76,43 +71,40 @@ def home():
                             ctx.fillText(det.tag + " " + (det.confidence*100).toFixed(1) + "%", x1, y1 - 5);
                         }
                     })
-                    .catch(error => console.error("Error in detection:", error));  // Log any errors from the fetch request
+                    .catch(error => console.error("Error in detection:", error));
                 }, 'image/jpeg');
             }
 
-            setInterval(sendFrame, 3000); // Send 1 frame per second
+            setInterval(sendFrame, 3000); // every 3s to reduce CPU
         </script>
     </body>
     </html>
     """
 
-
 @app.post("/detect/")
 async def detect(file: UploadFile = File(...)):
-    image_bytes = await file.read()
-
     try:
+        image_bytes = await file.read()
         image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
         image = image.resize((320, 240))
+
+        loop = asyncio.get_event_loop()
+        results = await loop.run_in_executor(executor, model, image)
+
+        detections = []
+        boxes = results[0].boxes
+
+        if boxes is not None:
+            for box in boxes.data.tolist():
+                x1, y1, x2, y2, score, class_id = box
+                detections.append({
+                    "box": [x1, y1, x2, y2],
+                    "confidence": score,
+                    "class_id": int(class_id),
+                    "tag": model.names[int(class_id)]
+                })
+
+        return {"results": detections}
     except Exception as e:
-        print("Error loading image:", e)
+        print("🔥 Error in /detect/:", e)
         return {"results": []}
-
-    loop = asyncio.get_event_loop()
-    results = await loop.run_in_executor(executor, model, image)
-
-    detections = []
-    boxes = results[0].boxes
-
-    if boxes is not None:
-        for box in boxes.data.tolist():
-            x1, y1, x2, y2, score, class_id = box
-            detections.append({
-                "box": [x1, y1, x2, y2],
-                "confidence": score,
-                "class_id": int(class_id),
-                "tag": model.names[int(class_id)]
-            })
-
-    return {"results": detections}
-
