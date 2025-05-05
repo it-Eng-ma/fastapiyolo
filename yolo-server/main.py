@@ -95,8 +95,8 @@ async def detect(file: UploadFile = File(...)):
     boxes = results[0].boxes
 
 
-    if result.boxes is not None:
-        for box in result.boxes.data.tolist():
+    if boxes is not None:
+        for box in boxes.data.tolist():
             x1, y1, x2, y2, score, class_id = box
             detections.append({
                 "box": [x1, y1, x2, y2],
