@@ -8,6 +8,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 import asyncio
 import concurrent.futures
+
 # Initialize FastAPI app
 app = FastAPI()
 
@@ -79,13 +80,12 @@ def home():
                 }, 'image/jpeg');
             }
 
-            setInterval(sendFrame, 1000); // Send 1 frame per second
+            setInterval(sendFrame, 3000); // Send 1 frame per second
         </script>
     </body>
     </html>
     """
-import asyncio
-import concurrent.futures
+
 
 executor = concurrent.futures.ThreadPoolExecutor()
 @app.post("/detect/")
@@ -116,5 +116,5 @@ if boxes is not None:
         })
 
 
-    # Return detections as JSON
-    return {"results": detections}
+ # Return detections as JSON
+return {"results": detections}
