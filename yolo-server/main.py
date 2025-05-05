@@ -21,7 +21,7 @@ app.add_middleware(
 )
 
 # Load YOLO model
-model = YOLO("cardmg.pt")
+model = YOLO("yolo-server/cardmg.pt")
 executor = concurrent.futures.ThreadPoolExecutor()
 
 @app.get("/", response_class=HTMLResponse)
